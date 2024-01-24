@@ -1,20 +1,31 @@
-﻿using EFCoreCache.Interfaces;
-using NeoSmart.AsyncLock;
+﻿using AsyncKeyedLock;
+using EFCoreCache.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace EFCoreCache.Providers;
 
-public class LockProvider : ILockProvider
+public sealed class LockProvider : ILockProvider
 {
-    private readonly AsyncLock _lock = new();
+    private readonly AsyncNonKeyedLocker _lock = new();
 
     /// <summary>
     ///     Tries to enter the sync lock
     /// </summary>
-    public IDisposable Lock(CancellationToken cancellationToken = default) => _lock.Lock(cancellationToken);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public AsyncNonKeyedLockReleaser Lock(CancellationToken cancellationToken = default) => _lock.Lock(cancellationToken);
 
     /// <summary>
     ///     Tries to enter the async lock
     /// </summary>
-    public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default) =>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask<AsyncNonKeyedLockReleaser> LockAsync(CancellationToken cancellationToken = default) =>
         _lock.LockAsync(cancellationToken);
+
+    /// <summary>
+    ///     Disposes the lock
+    /// </summary>    
+    public void Dispose()
+    {
+        _lock.Dispose();
+    }
 }
